@@ -19,13 +19,12 @@ function alertMemoryUsage()
 echo $0, $1, $2
 maxmemory=$1;
 memoryused=$2;
-alertmemory=$((1073741824 - 1024 * 1024 * 1024))
-echo "alert memory :"$alertmemory
-echo "maxmemory :"$maxmemory
-echo "memoryused :"$memoryused
+alertmemory=$(($maxmemory - 1024 * 1024 * 1024))
+# 当剩余1g空间时，报警
 if [[ $alertmemory -le $memoryused ]]
 then
 echo "send email here";
+# 当没有剩余空间时，报警，并调用清除脚本
 elif [[ $maxmemory -le $memoryused ]]
 then
 echo "send email here, and then try to clear cache";
@@ -37,6 +36,7 @@ function checkMemoryUsage()
 {
 maxmemory=`grep ^maxmemory redis.conf|awk '{print $2}'|sed 's/G//'`;
 maxmemoryinbytes=$(($maxmemory * 1024 * 1024 * 1024));
+# redis info命令会输出^M，这里用sed过滤，ctrl-v + ctrl+M
 memoryused=`src/redis-cli info|grep used_memory:|awk -F':' '{print $2}'|sed 's///'`;
 alertMemoryUsage $maxmemoryinbytes $memoryused;
 }
