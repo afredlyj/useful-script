@@ -10,9 +10,10 @@ import json
 import logging
 from logging.handlers import TimedRotatingFileHandler
 
-logHandler = TimedRotatingFileHandler("logfile.log",when="midnight", backupCount=5)
+logHandler = TimedRotatingFileHandler("logfile.log",when="d", interval=1, backupCount=5)
 logFormatter = logging.Formatter('%(asctime)s %(name)-12s %(levelname)-8s %(message)s')
 logHandler.setFormatter(logFormatter)
+logHandler.suffix = "%Y%m%d"  # 设置后缀
 logger = logging.getLogger('activemqMonitorLog')
 logger.addHandler(logHandler)
 logger.setLevel(logging.INFO)
