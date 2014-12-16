@@ -1,17 +1,28 @@
 #-*-coding:utf-8-*-
+
+'use restful api to monitor activemq broker'
+
 __author__ = 'afred.lyj'
 import  httplib
 import  urllib
 import base64
 import json
 import logging
+from logging.handlers import TimedRotatingFileHandler
+
+logHandler = TimedRotatingFileHandler("logfile.log",when="midnight", backupCount=5)
+logFormatter = logging.Formatter('%(asctime)s %(name)-12s %(levelname)-8s %(message)s')
+logHandler.setFormatter(logFormatter)
+logger = logging.getLogger('activemqMonitorLog')
+logger.addHandler(logHandler)
+logger.setLevel(logging.INFO)
 
 username = 'admin'
 password = 'admin'
 
 mqList='192.168.1.101:8161:example.MyQueue,opaycenter_queue_notify_2000;192.168.1.102:8161:example.MyQueue,opaycenter_queue_notify_2000'
 
-logging.basicConfig(filename="activemqMonitor.log", level=logging.DEBUG)
+#logging.basicConfig(filename="activemqMonitor.log", level=logging.DEBUG)
 
 def parseMqList(mqList):
     li = mqList.split(';')
@@ -27,7 +38,7 @@ def parseMqList(mqList):
     return l
 
 def httpGet(host,port,url,timeout=10):
-    print("httpget the host:%s,port:%d, the param:%s" %(host,port,url))
+    #print("httpget the host:%s,port:%d, the param:%s" %(host,port,url))
     base64String = base64.encodestring('%s:%s' % (username, password))
     authHeader = 'Basic %s' % base64String
     headers = {'Authorization': authHeader}
@@ -40,8 +51,7 @@ def httpGet(host,port,url,timeout=10):
             data = response.read()
             return data
     except Exception, e:
-        logging.error(e)
-        print e
+        logger.error(e)
         return "";
 
 def checkBrokerAttribute(host, port, attribute):
@@ -74,7 +84,7 @@ def checkQueue(host, port, queueName):
     if response:
         result = json.loads(response)
         values = result.get('value')
-        print values
+        #print values
         queueSize = values.get('QueueSize')
         if queueSize > 10:
             print "current queue size is %d, need alert" % queueSize
@@ -86,9 +96,10 @@ def checkQueue(host, port, queueName):
 
 
 if __name__=='__main__':
-     l = parseMqList(mqList)
+    logger.info("hello")
+    l = parseMqList(mqList)
      #print l
-     for broker in l:
+    for broker in l:
         brokerDown = checkBroker(broker['host'], int(broker['port']))
         #print brokerDown
         if brokerDown:
@@ -98,4 +109,5 @@ if __name__=='__main__':
         queues = broker.get('queues')
         for queue in queues:
             checkQueue(broker['host'], int(broker['port']), queue)
+    
 
